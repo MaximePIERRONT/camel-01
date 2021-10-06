@@ -1,7 +1,11 @@
 package fr.pantheonsorbonne.ufr27.miage.camel;
 
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
+
+import org.apache.commons.io.FilenameUtils;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -9,15 +13,18 @@ import javax.inject.Inject;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSContext;
 import javax.jms.Session;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-//cette classe est un singleton
-//elle implémente l'interface Runnable qui spécifie qu'elle peut être exécutée par un scheduler
 @ApplicationScoped
-public class PriceProducer implements Runnable {
+public class TriangleXMLProducer implements Runnable {
+    public static final String PATHNAME = "/target/data/";
 
     //nous récupérons à l'aide de CDI une fabrique de connexions JMS
     @Inject
@@ -45,11 +52,11 @@ public class PriceProducer implements Runnable {
     //cette méthode est exécutée en boucle par le scheduler
     @Override
     public void run() {
-        //syntaxe try-with-resource
-        //on crée un nouveau contexte JMS en spécifiant que les sessions sont cloturées automatiquement lors que les messages sont consommés.
+
+
         try (JMSContext context = connectionFactory.createContext(Session.AUTO_ACKNOWLEDGE)) {
             //on crée un producteur et on y envoie un message dans une nouvelle queue "prices"
-            //le message est une chaine de caractères, contenant un entier tiré aléatoirement entre 1 et 100.
+            //le message est     une chaine de caractères, contenant un entier tiré aléatoirement entre 1 et 100.
             context.createProducer().send(context.createQueue("queue/prices"), Integer.toString(random.nextInt(100)));
         }
     }
