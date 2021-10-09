@@ -3,14 +3,13 @@ package fr.pantheonsorbonne.ufr27.miage.model;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.*;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.StringWriter;
 
 @XmlRootElement
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Triangle {
 
     @XmlElement(name = "point")
