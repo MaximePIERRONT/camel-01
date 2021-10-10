@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<triangle>
+    <point>
+        <x>0.0</x>
+        <y>0.0</y>
+    </point>
+    <point>
+        <x>0.0</x>
+        <y>2.0</y>
+    </point>
+    <point>
+        <x>3.0</x>
+        <y>2.0</y>
+    </point>
+</triangle>

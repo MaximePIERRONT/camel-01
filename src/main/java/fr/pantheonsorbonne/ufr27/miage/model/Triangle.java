@@ -4,6 +4,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.annotation.*;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.StringWriter;
@@ -28,24 +29,25 @@ public class Triangle {
         return points;
     }
 
-    public float getPerimeters(){
-        return points[0].getDistance(points[1]) + points[1].getDistance(points[2]) + points[2].getDistance(points[0]);
+    public float getPerimeter(){
+        float a = points[0].getDistance(points[1]);
+        float b = points[1].getDistance(points[2]);
+        float c = points[2].getDistance(points[0]);
+        return a + b + c;
     }
 
     public boolean isEquilateral(){
-        if( (points[0].getDistance(points[1]) == points[1].getDistance(points[2]))
-            && (points[1].getDistance(points[2]) == points[2].getDistance(points[0]))){
-            return true;
-        }
-        return false;
+        return (points[0].getDistance(points[1]) == points[1].getDistance(points[2]))
+                && (points[1].getDistance(points[2]) == points[2].getDistance(points[0]));
     }
 
-    public void getXMLFile(String path) throws JAXBException {
+    public void getXMLFile(String path, String fileName) throws JAXBException {
         try {
             JAXBContext jaxbContext = JAXBContext.newInstance(this.getClass());
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
             jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            jaxbMarshaller.marshal(this, new FileOutputStream(path));
+            File file = new File(path + fileName);
+            jaxbMarshaller.marshal(this, new FileOutputStream(file));
         } catch (JAXBException | FileNotFoundException e) {
             throw new RuntimeException(e);
         }

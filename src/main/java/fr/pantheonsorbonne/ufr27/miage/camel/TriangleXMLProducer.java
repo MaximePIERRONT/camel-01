@@ -2,6 +2,8 @@ package fr.pantheonsorbonne.ufr27.miage.camel;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
+import fr.pantheonsorbonne.ufr27.miage.model.Point;
+import fr.pantheonsorbonne.ufr27.miage.model.Triangle;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 
@@ -10,21 +12,22 @@ import org.apache.commons.io.FilenameUtils;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSContext;
-import javax.jms.Session;
+import javax.jms.*;
+import javax.xml.bind.JAXBException;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Random;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @ApplicationScoped
 public class TriangleXMLProducer implements Runnable {
-    public static final String PATHNAME = "/target/data/";
+    public static final String PATHNAME = "data/triangle/";
+    public static final String PATH_EQUILATERAL = "data/triangle/equilateral/";
+    public static final String PATH_OTHER = "data/triangle/autres/";
+    public static final int NUMBER_POINTS_TRIANGLE = 3;
 
     //nous récupérons à l'aide de CDI une fabrique de connexions JMS
     @Inject
@@ -41,7 +44,7 @@ public class TriangleXMLProducer implements Runnable {
         //on planifie l'exécution de la méthode run() de cette classe:
         // - immédiatement (initialDelay=0
         // - toute les 5s (period = 5L, unit = secondes)
-        scheduler.scheduleAtFixedRate(this, 0L, 5L, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this, 0L, 10L, TimeUnit.SECONDS);
     }
 
     //cette méthode est appellées lorsque quarkus s'arrète
@@ -52,12 +55,76 @@ public class TriangleXMLProducer implements Runnable {
     //cette méthode est exécutée en boucle par le scheduler
     @Override
     public void run() {
-
-
         try (JMSContext context = connectionFactory.createContext(Session.AUTO_ACKNOWLEDGE)) {
-            //on crée un producteur et on y envoie un message dans une nouvelle queue "prices"
-            //le message est     une chaine de caractères, contenant un entier tiré aléatoirement entre 1 et 100.
-            context.createProducer().send(context.createQueue("queue/prices"), Integer.toString(random.nextInt(100)));
+            sendTriangles(context);
         }
+
+    }
+
+
+    private void sendTriangles(JMSContext context) {
+        File fileTest = new File("data/triangle");
+        File[] files = fileTest.listFiles();
+        for (File file : files ) {
+            Triangle triangle = createTriangleInstance(file);
+            if (Objects.isNull(triangle)){
+            } else if (triangle.isEquilateral()){
+                String result = getXMLString(file, triangle, PATH_EQUILATERAL);
+                TextMessage textMessage = context.createTextMessage(result);
+                context.createProducer().send(context.createQueue("queue/MPI_equilateral"),textMessage);
+            } else {
+                String result = getXMLString(file, triangle, PATH_EQUILATERAL);
+                TextMessage textMessage = context.createTextMessage(result);
+                context.createProducer().send(context.createQueue("queue/MPI_autres"),textMessage);
+            }
+        }
+    }
+
+    private static String getXMLString(File file, Triangle triangle, String path) {
+        String fileName = file.getName();
+        final String fileNameXML = fileName.substring(0, fileName.length() - 4) + ".xml";
+        try {
+            triangle.getXMLFile(path, fileNameXML);
+            return Files.readString(Path.of(path+fileNameXML));
+        } catch (JAXBException | IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private Triangle createTriangleInstance(File file) {
+        String fileName = file.getName();
+        return getTriangle(file, fileName);
+    }
+
+
+    private Triangle getTriangle(File file, String fileName) {
+        if (file.isFile() && FilenameUtils.getExtension(fileName).equals("csv")) {
+            try {
+                Point[] points = getPoints(fileName);
+                return new Triangle(points[0], points[1], points[2]);
+            } catch (IOException | CsvException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    private Point[] getPoints(String fileName) throws IOException, CsvException {
+        List<String[]> list = readCSV(fileName);
+        Point[] points = new Point[NUMBER_POINTS_TRIANGLE];
+        int i = 0;
+        for (String[] stringTab : list) {
+            points[i] = new Point(Float.parseFloat(stringTab[0]), Float.parseFloat((stringTab[1])));
+            i++;
+        }
+        return points;
+    }
+
+    private List<String[]> readCSV(String fileName) throws IOException, CsvException {
+        CSVReader csvReader = new CSVReader(new FileReader(PATHNAME + fileName));
+        List<String[]> list = csvReader.readAll();
+        csvReader.close();
+        return list;
     }
 }
