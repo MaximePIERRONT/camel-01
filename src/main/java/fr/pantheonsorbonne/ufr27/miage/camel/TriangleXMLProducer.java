@@ -28,6 +28,10 @@ public class TriangleXMLProducer implements Runnable {
     public static final String PATH_EQUILATERAL = "data/triangle/equilateral/";
     public static final String PATH_OTHER = "data/triangle/autres/";
     public static final int NUMBER_POINTS_TRIANGLE = 3;
+    public static final String QUEUE_MPI_AUTRES = "queue/MPI_autres";
+    public static final String QUEUE_MPI_EQUILATERAL = "queue/MPI_equilateral";
+    public static final String CSV = "csv";
+    public static final String XML = ".xml";
 
     //nous récupérons à l'aide de CDI une fabrique de connexions JMS
     @Inject
@@ -63,7 +67,7 @@ public class TriangleXMLProducer implements Runnable {
 
 
     private void sendTriangles(JMSContext context) {
-        File fileTest = new File("data/triangle");
+        File fileTest = new File(PATHNAME);
         File[] files = fileTest.listFiles();
         for (File file : files ) {
             Triangle triangle = createTriangleInstance(file);
@@ -71,18 +75,18 @@ public class TriangleXMLProducer implements Runnable {
             } else if (triangle.isEquilateral()){
                 String result = getXMLString(file, triangle, PATH_EQUILATERAL);
                 TextMessage textMessage = context.createTextMessage(result);
-                context.createProducer().send(context.createQueue("queue/MPI_equilateral"),textMessage);
+                context.createProducer().send(context.createQueue(QUEUE_MPI_EQUILATERAL),textMessage);
             } else {
-                String result = getXMLString(file, triangle, PATH_EQUILATERAL);
+                String result = getXMLString(file, triangle, PATH_OTHER);
                 TextMessage textMessage = context.createTextMessage(result);
-                context.createProducer().send(context.createQueue("queue/MPI_autres"),textMessage);
+                context.createProducer().send(context.createQueue(QUEUE_MPI_AUTRES),textMessage);
             }
         }
     }
 
     private static String getXMLString(File file, Triangle triangle, String path) {
         String fileName = file.getName();
-        final String fileNameXML = fileName.substring(0, fileName.length() - 4) + ".xml";
+        final String fileNameXML = fileName.substring(0, fileName.length() - 4) + XML;
         try {
             triangle.getXMLFile(path, fileNameXML);
             return Files.readString(Path.of(path+fileNameXML));
@@ -99,7 +103,7 @@ public class TriangleXMLProducer implements Runnable {
 
 
     private Triangle getTriangle(File file, String fileName) {
-        if (file.isFile() && FilenameUtils.getExtension(fileName).equals("csv")) {
+        if (file.isFile() && FilenameUtils.getExtension(fileName).equals(CSV)) {
             try {
                 Point[] points = getPoints(fileName);
                 return new Triangle(points[0], points[1], points[2]);
