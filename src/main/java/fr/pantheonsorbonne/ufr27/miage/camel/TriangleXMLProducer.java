@@ -104,12 +104,18 @@ public class TriangleXMLProducer implements Runnable {
 
     private Triangle getTriangle(File file, String fileName) {
         if (file.isFile() && FilenameUtils.getExtension(fileName).equals(CSV)) {
-            try {
-                Point[] points = getPoints(fileName);
-                return new Triangle(points[0], points[1], points[2]);
-            } catch (IOException | CsvException e) {
-                e.printStackTrace();
-            }
+            Triangle points = getTriangle(fileName);
+            if (points != null) return points;
+        }
+        return null;
+    }
+
+    private Triangle getTriangle(String fileName) {
+        try {
+            Point[] points = getPoints(fileName);
+            return new Triangle(points[0], points[1], points[2]);
+        } catch (IOException | CsvException e) {
+            e.printStackTrace();
         }
         return null;
     }
