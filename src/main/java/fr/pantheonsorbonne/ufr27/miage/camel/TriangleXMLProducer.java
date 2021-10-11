@@ -105,7 +105,7 @@ public class TriangleXMLProducer implements Runnable {
     private Triangle getTriangle(File file, String fileName) {
         if (file.isFile() && FilenameUtils.getExtension(fileName).equals(CSV)) {
             Triangle points = getTriangle(fileName);
-            if (points != null) return points;
+            return points;
         }
         return null;
     }
